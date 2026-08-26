@@ -71,7 +71,11 @@ func (s *state) clone() *state {
 		out.byID[k] = v
 	}
 	out.catalog = s.catalog.Clone()
-	out.film = s.film
+	// Deep-copy the film manager: a staged transaction mutates the clone's
+	// accounts and entries, and a failed commit (e.g. a lease conflict after
+	// the film issue already applied) must be discardable without leaving any
+	// account or entry change on committed state.
+	out.film = s.film.Clone()
 	out.leases = s.leases.Clone()
 	for k, v := range s.calls {
 		cp := *v

@@ -29,10 +29,20 @@ func NewMemoryWithAdapter(adapter instrument.Adapter) *Memory {
 	return &Memory{state: newState(), adapter: adapter}
 }
 
+// mutate stages a clone, applies fn and commits only on success so a partial
+// failure (for example a film issue that applies before a lease conflict) leaves
+// no side effect on committed state. This mirrors SQLiteStore.mutate and is
+// what keeps the in-memory store consistent with the failed-transaction
+// rollback boundary.
 func (m *Memory) mutate(fn func(*state) error) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return fn(m.state)
+	clone := m.state.clone()
+	if err := fn(clone); err != nil {
+		return err
+	}
+	m.state = clone
+	return nil
 }
 
 func (m *Memory) read(fn func(*state) error) error {
