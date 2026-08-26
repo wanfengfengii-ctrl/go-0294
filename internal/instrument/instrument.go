@@ -71,10 +71,14 @@ func (a *ScriptedAdapter) Run(_ Device, _ string) Result {
 	return r
 }
 
-// Call is a persisted instrument invocation with its logical retry state.
+// Call is a persisted instrument invocation with its logical retry state. The
+// Generation pins the call to the task generation that produced it so a retry
+// belonging to a superseded generation is rejected as a late receipt rather
+// than applied to the current generation.
 type Call struct {
 	ID          string              `json:"id"`
 	TaskID      string              `json:"task_id"`
+	Generation  int                 `json:"generation"`
 	Device      Device              `json:"device"`
 	Payload     string              `json:"payload"`
 	Attempt     int                 `json:"attempt"`

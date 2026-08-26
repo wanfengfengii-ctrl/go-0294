@@ -442,6 +442,7 @@ func (s *state) runDevice(t *Task, stage domain.Stage, req InstrumentRequest, ad
 		call := &instrument.Call{
 			ID:          digestString(fmt.Sprintf("%s|%d|%d", t.ID, req.LogicalTime, s.nextSeq())),
 			TaskID:      t.ID,
+			Generation:  t.Generation,
 			Device:      req.Device,
 			Payload:     req.Payload,
 			Attempt:     attempt,
@@ -482,7 +483,9 @@ func (s *state) runDevice(t *Task, stage domain.Stage, req InstrumentRequest, ad
 	}, nil
 }
 
-// RunRetry re-runs a pending instrument call with its fixed backoff.
+// RunRetry re-runs a pending instrument call with its fixed backoff. A retry
+// pinned to a superseded generation is a late receipt and is rejected with a
+// generation conflict instead of advancing the current generation's stage.
 func (s *state) RunRetry(callID string, adapter instrument.Adapter) (InstrumentResult, error) {
 	call, ok := s.calls[callID]
 	if !ok {
@@ -494,6 +497,10 @@ func (s *state) RunRetry(callID string, adapter instrument.Adapter) (InstrumentR
 	t, err := s.getTask(call.TaskID)
 	if err != nil {
 		return InstrumentResult{}, err
+	}
+	if call.Generation != t.Generation {
+		return InstrumentResult{}, domain.NewError(domain.CodeRetestGenerationConflict,
+			"retry belongs to a superseded generation", fmt.Sprintf("%d", call.Generation))
 	}
 	s.tick(call.NextTime)
 	stage, ok := instrumentStage(call.Device)
