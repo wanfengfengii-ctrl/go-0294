@@ -1,0 +1,12 @@
+{
+  "name": "curtainwall-assembly-gate-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single-page workbench for the curtain-wall laminated glass assembly gate",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs --serve"
+  },
+  "devDependencies": {}
+}
