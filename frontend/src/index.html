@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>幕墙夹层钢化玻璃装配准入工作台</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 60rem; }
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.05rem; margin-top: 1.5rem; }
+    section { border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+    label { display: block; margin-top: 0.5rem; }
+    input, select { width: 100%; padding: 0.35rem; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    pre { background: #f6f6f6; padding: 0.75rem; overflow: auto; font-size: 0.8rem; }
+    .err { color: #b00020; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 16rem; }
+  </style>
+</head>
+<body>
+  <h1>幕墙夹层钢化玻璃装配准入工作台</h1>
+
+  <section>
+    <h2>后端状态</h2>
+    <p id="health">正在连接后端…</p>
+  </section>
+
+  <div class="row">
+    <section>
+      <h2>锁定设计</h2>
+      <label>工程 <input id="project" value="Tower-A" /></label>
+      <label>立面分区 <input id="zone" value="F1" /></label>
+      <label>板号 <input id="plate" value="P-001" /></label>
+      <label>原片熔窑批次 <input id="lot" value="LOT-7" /></label>
+      <label>中间膜批次 <input id="film" value="FILM-9" /></label>
+      <button id="lock">锁定设计</button>
+      <pre id="lockResult"></pre>
+    </section>
+
+    <section>
+      <h2>制造推进</h2>
+      <label>任务 <input id="taskId" placeholder="任务 ID" /></label>
+      <label>工序
+        <select id="stage">
+          <option>edge_confirm</option><option>temper</option>
+          <option>stress</option><option>heat_soak</option>
+          <option>lamination</option><option>pre_press</option>
+          <option>autoclave</option><option>optical_scan</option>
+          <option>destructive</option>
+        </select>
+      </label>
+      <label>操作号 <input id="opId" placeholder="可选" /></label>
+      <button id="advance">推进工序</button>
+      <pre id="advanceResult"></pre>
+    </section>
+  </div>
+
+  <section>
+    <h2>已锁定任务（含谱系与覆盖矩阵）</h2>
+    <pre id="tasks">（空）</pre>
+  </section>
+
+  <section>
+    <h2>膜材账本</h2>
+    <label>批次 <input id="ledgerBatch" value="FILM-9" /></label>
+    <button id="ledger">查询账本</button>
+    <pre id="ledgerResult"></pre>
+  </section>
+
+  <section>
+    <h2>仪器重试队列</h2>
+    <button id="retries">刷新重试队列</button>
+    <pre id="retryResult"></pre>
+  </section>
+
+  <div class="row">
+    <section>
+      <h2>异常复验</h2>
+      <label>任务 <input id="anomTask" placeholder="任务 ID" /></label>
+      <label>异常类型
+        <select id="anomKind">
+          <option>burst</option><option>edge_chip</option><option>low_stress</option>
+          <option>heat_gap</option><option>autoclave_interrupt</option>
+          <option>delamination</option><option>bubble</option><option>optical</option>
+          <option>destructive_failure</option>
+        </select>
+      </label>
+      <button id="anomaly">登记异常</button>
+      <pre id="anomalyResult"></pre>
+    </section>
+
+    <section>
+      <h2>双人裁定</h2>
+      <label>任务 <input id="verdictTask" placeholder="任务 ID" /></label>
+      <label>复核人 <input id="reviewer" placeholder="复核人" /></label>
+      <button id="review">登记复核</button>
+      <label>终局
+        <select id="verdict">
+          <option>admit</option><option>isolate</option><option>cancel</option>
+        </select>
+      </label>
+      <button id="submitVerdict">提交终局</button>
+      <pre id="verdictResult"></pre>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
