@@ -15,6 +15,14 @@ type ClosureRequirements struct {
 	// AllStagesClosed reports whether every manufacturing stage up to retest is
 	// complete for the current generation.
 	AllStagesClosed bool
+	// HeatSoakCovered reports whether every rack position has samples in all
+	// three heat-soak segments (ramp_up, hold, ramp_down), i.e. the coverage
+	// matrix is fully covered for the current generation.
+	HeatSoakCovered bool
+	// AutoclaveClosed reports whether a complete autoclave continuous prefix
+	// (preheat, pressurize, hold, depressurize, cool) has been submitted for
+	// the current generation.
+	AutoclaveClosed bool
 	// MetricsPass reports whether stress and appearance thresholds are met.
 	MetricsPass bool
 	// DestructivePass reports whether the sampled destructive test passed.
@@ -44,6 +52,12 @@ func CheckClosure(req ClosureRequirements) error {
 	}
 	if !req.AllStagesClosed {
 		return domain.NewError(domain.CodeStageOutOfOrder, "not all process stages closed")
+	}
+	if !req.HeatSoakCovered {
+		return domain.NewError(domain.CodeSampleGap, "heat-soak coverage not fully covered for current generation")
+	}
+	if !req.AutoclaveClosed {
+		return domain.NewError(domain.CodeSampleGap, "autoclave continuous prefix not closed for current generation")
 	}
 	if !req.MetricsPass {
 		return domain.NewError(domain.CodeStageOutOfOrder, "stress or appearance thresholds not met")

@@ -53,6 +53,37 @@ func AutoclaveOrder(phase string) (int, bool) {
 	}
 }
 
+// AutoclavePhaseCount is the number of mandatory autoclave phases that must all
+// be present before the cure timeline is considered closed for admission.
+const AutoclavePhaseCount = 5
+
+// AutoclavePrefixClosed reports whether the samples form a continuous autoclave
+// prefix that includes every mandatory phase (preheat, pressurize, hold,
+// depressurize, cool). A continuous-but-incomplete prefix is not enough: the
+// admission gate requires the whole cure timeline to be closed.
+func AutoclavePrefixClosed(samples []SamplePoint) bool {
+	if len(samples) == 0 {
+		return false
+	}
+	orders, err := SegmentOrders(samples, true)
+	if err != nil {
+		return false
+	}
+	if err := ValidateContinuousPrefix(orders); err != nil {
+		return false
+	}
+	seen := make(map[int]bool, len(orders))
+	for _, o := range orders {
+		seen[o] = true
+	}
+	for i := 0; i < AutoclavePhaseCount; i++ {
+		if !seen[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // ValidateSequence enforces strictly increasing logical times across the whole
 // sample slice, independent of segment or position.
 func ValidateSequence(samples []SamplePoint) error {

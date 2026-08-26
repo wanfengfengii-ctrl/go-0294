@@ -644,10 +644,16 @@ func (s *state) SubmitVerdict(taskID string, req VerdictRequest) (*arbiter.Verdi
 }
 
 func (s *state) closureRequirements(t *Task) arbiter.ClosureRequirements {
+	heatCovered := false
+	if matrix, err := evidence.BuildCoverage(t.Snapshot.Rack, s.heatSamples[t.ID]); err == nil {
+		heatCovered = matrix.FullyCovered()
+	}
 	return arbiter.ClosureRequirements{
 		LineageComplete: lineageComplete(t.Lineage),
 		FilmConserved:   s.film.Reconcile() == nil,
 		AllStagesClosed: allManufacturingStagesClosed(s.prefixes[t.ID]),
+		HeatSoakCovered: heatCovered,
+		AutoclaveClosed: evidence.AutoclavePrefixClosed(s.autoSamples[t.ID]),
 		MetricsPass:     s.metricsPass(t),
 		DestructivePass: s.destructivePass[t.ID],
 		RetestComplete:  s.retestComplete(t),
