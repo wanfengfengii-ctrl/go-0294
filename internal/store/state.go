@@ -539,6 +539,13 @@ func (s *state) RegisterAnomaly(taskID string, req AnomalyRequest) (*arbiter.Ret
 		return nil, domain.NewError(domain.CodeRetestGenerationConflict,
 			"generation mismatch", fmt.Sprintf("%d", req.Generation))
 	}
+	// A task whose single-write final barrier has already committed a verdict is
+	// terminal. A late field anomaly must never re-open rework and overwrite the
+	// admitted generation, credentials or completed stages.
+	if b := s.barriers[t.ID]; b != nil && b.Decided {
+		return nil, domain.NewError(domain.CodeFinalExists,
+			"anomaly cannot re-open a task with a committed final verdict", b.Verdict.String())
+	}
 	trigger := domain.RetestScopeKey{
 		FacadeZone: t.Snapshot.FacadeZone,
 		Plate:      t.Snapshot.PlateNumber,
