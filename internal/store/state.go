@@ -369,25 +369,37 @@ func (s *state) SubmitSamples(taskID string, req SampleRequest) (SamplesResult, 
 	s.tick(maxSampleTime(req.Samples))
 	switch req.Stage {
 	case "heat_soak":
-		orders, err := evidence.SegmentOrders(req.Samples, false)
+		// The strict-increasing and continuous-prefix invariants span every
+		// sample ever submitted for the rack, so validate and build coverage
+		// from the accumulated sequence, not just this batch. Otherwise a
+		// later batch whose logical time interleaves with prior samples passes
+		// in isolation but leaves GetCoverage returning SAMPLE_GAP over the
+		// merged, out-of-order sequence.
+		combined := append([]evidence.SamplePoint(nil), s.heatSamples[t.ID]...)
+		combined = append(combined, req.Samples...)
+		orders, err := evidence.SegmentOrders(combined, false)
 		if err != nil {
 			return SamplesResult{}, err
 		}
 		if err := evidence.ValidateContinuousPrefix(orders); err != nil {
 			return SamplesResult{}, err
 		}
-		matrix, err := evidence.BuildCoverage(t.Snapshot.Rack, req.Samples)
+		matrix, err := evidence.BuildCoverage(t.Snapshot.Rack, combined)
 		if err != nil {
 			return SamplesResult{}, err
 		}
-		s.heatSamples[t.ID] = append(s.heatSamples[t.ID], req.Samples...)
+		s.heatSamples[t.ID] = combined
 		return SamplesResult{Coverage: matrix, FullyCovered: matrix.FullyCovered()}, nil
 	case "autoclave":
-		result, err := evidence.ComputeAutoclave(req.Samples)
+		// Same cross-batch invariant: autoclave samples must stay strictly
+		// increasing across the whole accumulated sequence too.
+		combined := append([]evidence.SamplePoint(nil), s.autoSamples[t.ID]...)
+		combined = append(combined, req.Samples...)
+		result, err := evidence.ComputeAutoclave(combined)
 		if err != nil {
 			return SamplesResult{}, err
 		}
-		s.autoSamples[t.ID] = append(s.autoSamples[t.ID], req.Samples...)
+		s.autoSamples[t.ID] = combined
 		return SamplesResult{Autoclave: result}, nil
 	default:
 		return SamplesResult{}, domain.NewError(domain.CodeSampleGap, "unknown sample stage", req.Stage)
