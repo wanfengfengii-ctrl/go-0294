@@ -440,7 +440,7 @@ func (s *state) runDevice(t *Task, stage domain.Stage, req InstrumentRequest, ad
 	result := adapter.Run(req.Device, req.Payload)
 	if result.Outcome != instrument.OutcomeOK || result.Reading == nil || !result.Reading.WellFormed {
 		call := &instrument.Call{
-			ID:          digestString(fmt.Sprintf("%s|%d|%d", t.ID, req.LogicalTime, s.nextSeq())),
+			ID:          digestString(fmt.Sprintf("%s|%s|%d|%d", t.ID, req.Device, req.LogicalTime, s.nextSeq())),
 			TaskID:      t.ID,
 			Device:      req.Device,
 			Payload:     req.Payload,

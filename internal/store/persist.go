@@ -55,7 +55,7 @@ type retestRow struct {
 
 // toPersisted converts the in-memory state to its serializable form.
 func (s *state) toPersisted() persistedState {
-	p := persistedState{Clock: s.clock}
+	p := persistedState{Seq: s.seq, Clock: s.clock}
 	for _, t := range s.tasks {
 		pt := persistedTask{
 			Task:            *s.publicTask(t),
