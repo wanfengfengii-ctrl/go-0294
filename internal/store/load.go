@@ -133,7 +133,7 @@ func loadState(db *sql.DB) (*state, error) {
 			rows.Close()
 			return nil, err
 		}
-		p.Idem = append(p.Idem, persistedIdem{OperationID: op, RequestDigest: rec.RequestDigest, Response: rec.Response})
+		p.Idem = append(p.Idem, persistedIdem{OperationID: op, TaskID: rec.TaskID, RequestDigest: rec.RequestDigest, Response: rec.Response})
 	}
 	rows.Close()
 

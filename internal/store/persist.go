@@ -32,6 +32,7 @@ type persistedFilm struct {
 // persistedIdem is the on-disk form of an idempotency record.
 type persistedIdem struct {
 	OperationID   string `json:"operation_id"`
+	TaskID        string `json:"task_id"`
 	RequestDigest string `json:"request_digest"`
 	Response      string `json:"response"`
 }
@@ -94,7 +95,7 @@ func (s *state) toPersisted() persistedState {
 	}
 	for opID, rec := range s.idem {
 		p.Idem = append(p.Idem, persistedIdem{
-			OperationID: opID, RequestDigest: rec.RequestDigest, Response: rec.Response,
+			OperationID: opID, TaskID: rec.TaskID, RequestDigest: rec.RequestDigest, Response: rec.Response,
 		})
 	}
 	return p
@@ -137,7 +138,7 @@ func fromPersisted(p persistedState) (*state, error) {
 		s.retests[r.TaskID] = &cp
 	}
 	for _, id := range p.Idem {
-		s.idem[id.OperationID] = idemRecord{RequestDigest: id.RequestDigest, Response: id.Response}
+		s.idem[id.OperationID] = idemRecord{TaskID: id.TaskID, RequestDigest: id.RequestDigest, Response: id.Response}
 	}
 	return s, nil
 }

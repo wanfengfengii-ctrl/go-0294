@@ -370,7 +370,7 @@ func (s *SQLiteStore) persist(st *state) error {
 		}
 	}
 	for _, id := range p.Idem {
-		raw, _ := json.Marshal(persistedIdem{OperationID: id.OperationID, RequestDigest: id.RequestDigest, Response: id.Response})
+		raw, _ := json.Marshal(persistedIdem{OperationID: id.OperationID, TaskID: id.TaskID, RequestDigest: id.RequestDigest, Response: id.Response})
 		if _, err := tx.Exec(`INSERT INTO idempotency (operation_id, payload) VALUES (?, ?)`, id.OperationID, string(raw)); err != nil {
 			return mapUniqueViolation(err)
 		}

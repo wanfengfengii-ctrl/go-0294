@@ -14,9 +14,12 @@ import (
 	"curtainwall.example/assembly-gate/internal/lease"
 )
 
-// idemRecord binds an idempotency operation id to its committed request and
-// response digests.
+// idemRecord binds an idempotency operation id to the task it committed
+// against, plus its committed request and response digests. The task binding
+// prevents an operation id reused across two different plates from being
+// mistaken for a replay of an already-completed stage on the current plate.
 type idemRecord struct {
+	TaskID        string
 	RequestDigest string
 	Response      string
 }
@@ -269,9 +272,13 @@ func (s *state) Advance(taskID string, req OperationRequest) (*Task, error) {
 	}
 	if req.OperationID != "" {
 		if rec, ok := s.idem[req.OperationID]; ok {
-			if rec.RequestDigest != digestString(requestCanonical(req)) {
+			// An operation id is globally unique. A replay must target the
+			// exact task it was committed against: reusing the same id on a
+			// different plate (even with identical content) is a conflict,
+			// not an already-completed stage on this plate.
+			if rec.TaskID != t.ID || rec.RequestDigest != digestString(requestCanonical(req)) {
 				return nil, domain.NewError(domain.CodeIdempotencyConflict,
-					"operation id reused with different content").WithOperation(req.OperationID)
+					"operation id reused across tasks or with different content").WithOperation(req.OperationID)
 			}
 			return s.publicTask(t), nil
 		}
@@ -326,7 +333,7 @@ func (s *state) Advance(taskID string, req OperationRequest) (*Task, error) {
 	s.prefixes[t.ID] = newPrefix
 	s.growLineage(t, stage)
 	if req.OperationID != "" {
-		s.idem[req.OperationID] = idemRecord{RequestDigest: digestString(requestCanonical(req))}
+		s.idem[req.OperationID] = idemRecord{TaskID: t.ID, RequestDigest: digestString(requestCanonical(req))}
 	}
 	return s.publicTask(t), nil
 }
