@@ -321,6 +321,13 @@ func (s *state) Advance(taskID string, req OperationRequest) (*Task, error) {
 		}); err != nil {
 			return nil, err
 		}
+		// Evidence may only be committed under a lease that still covers the
+		// operation's logical time. A window that has already closed by the
+		// time the evidence arrives must be rejected as expired, even though
+		// the slot itself was reserved without overlap.
+		if err := s.leases.CheckWrite(req.ResourceKey, t.ID, req.LogicalTime); err != nil {
+			return nil, err
+		}
 	}
 
 	s.prefixes[t.ID] = newPrefix
